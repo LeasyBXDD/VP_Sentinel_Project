@@ -1,6 +1,6 @@
 import librosa
 from audiomentations import Compose, Gain
-from func.SDAfunc import SDA_view
+from Sample_transformation.func.SDAfunc import SDA_view
 
 
 # from main import M, signal, sr

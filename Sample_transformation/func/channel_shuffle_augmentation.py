@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import librosa
-from func.SDAfunc import SDA_view
+from Sample_transformation.func.SDAfunc import SDA_view
 from audiomentations import SpecCompose, SpecChannelShuffle, SpecFrequencyMask
 
 def channel_shuffle_augmentation(signal, sr):

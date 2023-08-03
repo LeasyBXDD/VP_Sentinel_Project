@@ -1,6 +1,6 @@
 import numpy as np
 import librosa
-from func.SDAfunc import SDA_view
+from Sample_transformation.func.SDAfunc import SDA_view
 from audiomentations import Compose, LowPassFilter, HighPassFilter, PolarityInversion, Reverse, Normalize, TanhDistortion
 
 def audio_augmentation(signal, sr, M):

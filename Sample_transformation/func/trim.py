@@ -1,5 +1,5 @@
 import librosa
-from func.SDAfunc import SDA_view
+from Sample_transformation.func.SDAfunc import SDA_view
 
 def trim(signal, sr):
     # 使用默认的top_db（60dB）进行修剪

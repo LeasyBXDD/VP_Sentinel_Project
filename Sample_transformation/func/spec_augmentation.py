@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import librosa
-from func.SDAfunc import SDA_view
+from Sample_transformation.func.SDAfunc import SDA_view
 
 def spec_augmentation(signal, sr):
     # 创建一个2行3列的网格布局
