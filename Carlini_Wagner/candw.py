@@ -83,6 +83,7 @@ def recover_label_with_cw_attack(model, denoised_mel_spectrogram, num_classes):
     recovered_label = torch.argmin(distances)  # 选择距离最小的标签作为恢复的标签
     return recovered_label
 
+
 # 扰动的置信度（计算模型对扰动输入的置信度）
 def compute_disturbed_confidence(model, input, num_samples=100, epsilon=0.01):
     """计算模型对扰动输入的置信度。"""
@@ -141,7 +142,7 @@ def prepare_input(audio_file):
 # 用GAN去噪
 def denoise_with_GAN(GAN_model, audio_file, C=0.5):
     y, sr = librosa.load(audio_file)  # 加载音频文件
-    mel_spectrogram = librosa.feature.melspectrogram(y, sr=sr)  # 计算音频的梅尔频谱
+    mel_spectrogram = librosa.feature.melspectrogram(y=y, sr=sr)  # 计算音频的梅尔频谱
     mel_spectrogram_tensor = torch.from_numpy(mel_spectrogram).unsqueeze(0).float()  # 将梅尔频谱转换为张量
 
     mel_spectrogram_tensor = mel_spectrogram_tensor.to(device)  # 将张量放到正确的设备上
@@ -183,17 +184,17 @@ def denoise_with_GAN(GAN_model, audio_file, C=0.5):
 
 # 主函数
 def main():
-    G = Generator(nz=100, ngf=64, nc=3).to(device)
-    G.load_state_dict(torch.load("../lib/generator.pth"))
+    G = Generator().to(device)
+    G.load_state_dict(torch.load("../lib/generator.pth", map_location=torch.device('cpu')))
 
-    D = Discriminator(nc=3, ndf=64).to(device)
-    D.load_state_dict(torch.load("../lib/discriminator.pth"))
+    D = Discriminator().to(device)
+    D.load_state_dict(torch.load("../lib/discriminator.pth", map_location=torch.device('cpu')))
 
-    GAN_model = MyGANModel(nz=100, ngf=64, ndf=64, nc=3).to(device)
+    GAN_model = MyGANModel().to(device)
     GAN_model.G = G
     GAN_model.D = D
 
-    audio_file = 'noisy.wav'
+    audio_file = '../lib/wav48/p225/p225_002.wav'
     denoise_with_GAN(GAN_model, audio_file)
 
 
