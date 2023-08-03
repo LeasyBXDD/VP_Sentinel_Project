@@ -28,7 +28,7 @@ def predict_speaker_similarity(filename_1, filename_2, base_model, tdnn_model):
 
 # Define the base model.
 base_model = DeepSpeakerModel()
-base_model.m.load_weights("ResCNN_triplet_training_checkpoint_265.h5", by_name=True)
+base_model.m.load_weights("../lib/ResCNN_triplet_training_checkpoint_265.h5", by_name=True)
 
 # Define the TDNN model.
 tdnn_input_shape = (512, 1)  # The input shape for the TDNN model should be based on the output of the base model.
@@ -45,9 +45,9 @@ tdnn_model = Sequential([
 tdnn_model.compile(loss='mse', optimizer='adam')
 
 # Sample some inputs for WAV/FLAC files for the same speaker.
-filename_1 = 'samples/PhilippeRemy/PhilippeRemy_001.wav'
-filename_2 = 'samples/PhilippeRemy/PhilippeRemy_002.wav'
-filename_3 = 'samples/1255-90413-0001.flac'
+filename_1 = '../lib/wav48/p225/p225_001.wav'
+filename_2 = '../lib/wav48/p225/p225_002.wav'
+filename_3 = '../lib/wav48/p225/p225_003.wav'
 same_speaker_similarity = predict_speaker_similarity(filename_1, filename_2, base_model, tdnn_model)
 diff_speaker_similarity = predict_speaker_similarity(filename_1, filename_3, base_model, tdnn_model)
 print('Same speaker similarity:', same_speaker_similarity)

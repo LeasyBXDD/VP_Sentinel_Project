@@ -40,7 +40,7 @@ def pad_waveform(waveform, desired_length):
 # generator.pth
 # discriminator.pth
 discriminator = Discriminator()
-discriminator.load_state_dict(torch.load('discriminator.pth'))
+discriminator.load_state_dict(torch.load('../lib/discriminator.pth'))
 discriminator.eval()  # 设置为评估模式
 
 # 假设我们知道每个样本的长度是1秒
@@ -52,8 +52,7 @@ with torch.no_grad():  # 不需要计算梯度
 
     # 音频文件路径列表
     # audio_files = ['./audio1.wav', './audio2.wav', './audio3.wav']
-    audio_files = ['../data/wav48/p225/p255_001.wav', '../data/wav48/p225/p255_002.wav',
-                   '../data/wav48/p225/p255_003.wav']
+    audio_files = ['../lib/wav48/p225/p255_001.wav', '../lib/wav48/p225/p255_002.wav', '../lib/wav48/p225/p255_003.wav']
 
     for audio_file in audio_files:
 

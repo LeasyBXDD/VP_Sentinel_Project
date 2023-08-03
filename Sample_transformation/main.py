@@ -12,7 +12,7 @@ from audiomentations import Compose, AddGaussianNoise
 
 if __name__ == '__main__':
     # 使用librosa库加载音频文件，并返回音频信号和采样率
-    signal, sr = load("./content/data/wav48/p225/p225_001.wav")
+    signal, sr = load("../lib/wav48/p225/p225_001.wav")
 
     # 生成梅尔频谱图
     S = melspectrogram(y=signal, sr=sr, n_mels=128, fmax=8000)
