@@ -8,23 +8,58 @@ torchaudio.set_audio_backend("soundfile")
 
 
 # 定义GAN的判别器
+# class Discriminator(nn.Module):
+#     def __init__(self):
+#         super(Discriminator, self).__init__()
+#         self.conv1 = nn.Conv2d(1, 8, kernel_size=3, stride=1, padding=1)  # 第一层卷积层
+#         self.avgpool = nn.AdaptiveAvgPool2d((8, 10))  # 平均池化层，将输入张量调整到指定的大小
+#         self.fc1 = nn.Linear(8 * 10 * 8, 500)  # 第一层全连接层
+#         self.fc2 = nn.Linear(500, 1)  # 第二层全连接层，输出一个单一的判别分数
+#
+#     def forward(self, x):
+#         x = x.unsqueeze(1)  # 增加一个维度，从(batch_size, height, width)变为(batch_size, 1, height, width)
+#         x = F.relu(self.conv1(x))  # 通过第一层卷积并应用ReLU激活函数
+#         x = self.avgpool(x)  # 对卷积的输出进行平均池化
+#         x = x.view(x.size(0), -1)  # 对张量进行reshape，方便输入全连接层
+#         x = F.relu(self.fc1(x))  # 通过第一层全连接层并应用ReLU激活函数
+#         x = torch.sigmoid(self.fc2(x))  # 通过第二层全连接层并应用Sigmoid激活函数，将输出限制在0到1之间
+#         return x
+
+class Opt:
+    def __init__(self):
+        self.channels = 1
+        self.img_size = 32
+        # add other parameters as needed
+
+opt = Opt()
+
 class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
-        self.conv1 = nn.Conv2d(1, 8, kernel_size=3, stride=1, padding=1)  # 第一层卷积层
-        self.avgpool = nn.AdaptiveAvgPool2d((8, 10))  # 平均池化层，将输入张量调整到指定的大小
-        self.fc1 = nn.Linear(8 * 10 * 8, 500)  # 第一层全连接层
-        self.fc2 = nn.Linear(500, 1)  # 第二层全连接层，输出一个单一的判别分数
 
-    def forward(self, x):
-        x = x.unsqueeze(1)  # 增加一个维度，从(batch_size, height, width)变为(batch_size, 1, height, width)
-        x = F.relu(self.conv1(x))  # 通过第一层卷积并应用ReLU激活函数
-        x = self.avgpool(x)  # 对卷积的输出进行平均池化
-        x = x.view(x.size(0), -1)  # 对张量进行reshape，方便输入全连接层
-        x = F.relu(self.fc1(x))  # 通过第一层全连接层并应用ReLU激活函数
-        x = torch.sigmoid(self.fc2(x))  # 通过第二层全连接层并应用Sigmoid激活函数，将输出限制在0到1之间
-        return x
+        def discriminator_block(in_filters, out_filters, bn=True):
+            block = [nn.Conv2d(in_filters, out_filters, 3, 2, 1), nn.LeakyReLU(0.2, inplace=True), nn.Dropout2d(0.25)]
+            if bn:
+                block.append(nn.BatchNorm2d(out_filters, 0.8))
+            return block
 
+        self.model = nn.Sequential(
+            *discriminator_block(opt.channels, 16, bn=False),
+            *discriminator_block(16, 32),
+            *discriminator_block(32, 64),
+            *discriminator_block(64, 128),
+        )
+
+        # The height and width of downsampled image
+        ds_size = opt.img_size // 2 ** 4
+        self.adv_layer = nn.Sequential(nn.Linear(128 * ds_size ** 2, 1), nn.Sigmoid())
+
+    def forward(self, img):
+        out = self.model(img)
+        out = out.view(out.shape[0], -1)
+        validity = self.adv_layer(out)
+
+        return validity
 
 # 定义填充函数，如果音频片段小于期望长度，使用零进行填充
 def pad_waveform(waveform, desired_length):
@@ -40,7 +75,8 @@ def pad_waveform(waveform, desired_length):
 # generator.pth
 # discriminator.pth
 discriminator = Discriminator()
-discriminator.load_state_dict(torch.load('../lib/discriminator.pth'))
+# discriminator.load_state_dict(torch.load('../lib/discriminator.pth'))
+discriminator.load_state_dict(torch.load('../lib/discriminator.pth', map_location=torch.device('cpu')))
 discriminator.eval()  # 设置为评估模式
 
 # 假设我们知道每个样本的长度是1秒
