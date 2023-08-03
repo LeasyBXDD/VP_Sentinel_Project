@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="kimythanly">
+
+    <title>对抗样本生成模块</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.1/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom fonts for this template -->
+    <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet'
+        type='text/css'>
+    <link
+        href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800'
+        rel='stylesheet' type='text/css'>
+
+    <!-- Custom styles for this template -->
+    <link href="css/clean-blog.css" rel="stylesheet">
+
+</head>
+
+<body>
+    <header class="masthead" style="background-color: #337ecc;">
+        <!-- <div class="container">
+            <div class="row">
+                <div class="col-lg-10 col-md-10 mx-auto">
+                    <div class="site-heading">
+                        <h1>基于GAN的<br>音频对抗样本生成模块</h1>
+                    </div>
+                </div>
+            </div>
+        </div> -->
+    </header>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-14 col-md-12 mx-auto">
+                <div class="post-preview">
+                    <h2 class="post-title">
+                        概述
+                    </h2>
+                    <p>
+                        这是VP Sentinel的<b>音频对抗样本生成模块</b>，基于GAN的方法生成对抗样本，用于攻击语音识别系统。<br>
+                        输入两段音频，一段为原始音频，一段为目标音频，模型将原始音频转换为目标音频。
+                        <br>举个例子，输入一段张三说话的音频，一段李四说话的音频，可以生成一段拥有张三音色的和李四音频内容的音频。
+                        <br>在现实生活中，这种技术如果被不法分子利用，可能会被用于伪造证据，造成严重的社会后果。
+                </div>
+                <!-- <div class="post-preview">
+                    <h2 class="post-title">
+                        Paper
+                    </h2>
+                    <p>
+                        The paper is
+                        <a href="https://arxiv.org/abs/2011.00316">here</a>.
+                    </p>
+                </div>
+                <div class="post-preview">
+                    <h2 class="post-title">
+                        Code
+                    </h2>
+                    <p>
+                        The code is available
+                        <a href="https://github.com/KimythAnly/AGAIN-VC">here</a>.
+                    </p>
+                </div> -->
+                <div class="post-preview">
+                    <h2 class="post-title">
+                        例子
+                    </h2>
+                    <h3 class="post-meta">
+                        <!-- voice conversion from unseen speaker to unseen speaker -->
+                    </h3>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">原始音频文件</th>
+                                <th scope="col">目标声音样本</th>
+                                <th scope="col">对抗样本结果</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr>
+                                <td>
+                                    <!-- p334_007 -->
+                                    <audio controls preload="none">
+                                        <source
+                                            src="https://kimythanly.github.io/AGAIN-VC-demo/data/melgan/p334_007.wav">
+                                    </audio>
+                                </td>
+                                <td>
+                                    <!-- p343_004 -->
+                                    <audio controls preload="none">
+                                        <source
+                                            src="https://kimythanly.github.io/AGAIN-VC-demo/data/melgan/p343_004.wav">
+                                    </audio>
+                                </td>
+                                <td>
+                                    <!-- Proposed -->
+                                    <audio controls preload="none">
+                                        <source
+                                            src="https://kimythanly.github.io/AGAIN-VC-demo/data/proposed/p334_007_to_p343_004.wav">
+                                    </audio>
+                                    <!-- AdaIN-VC
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/adain/p334_007_to_p343_004.wav">
+                                    </audio> -->
+                                </td>
+                                <!-- <td>VQVC+
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/vqvc/p334_007_to_p343_004.wav">
+                                    </audio> AutoVC
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/autovc/p334_007_to_p343_004.wav">
+                                    </audio>
+                                </td> -->
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <!-- p334_007 -->
+                                    <audio controls preload="none">
+                                        <source
+                                            src="https://kimythanly.github.io/AGAIN-VC-demo/data/melgan/p334_007.wav">
+                                    </audio>
+                                </td>
+                                <td>
+                                    <!-- p360_018 -->
+                                    <audio controls preload="none">
+                                        <source
+                                            src="https://kimythanly.github.io/AGAIN-VC-demo/data/melgan/p360_018.wav">
+                                    </audio>
+                                </td>
+                                <td>
+                                    <!-- Proposed -->
+                                    <audio controls preload="none">
+                                        <source
+                                            src="https://kimythanly.github.io/AGAIN-VC-demo/data/proposed/p334_007_to_p360_018.wav">
+                                    </audio>
+                                    <!-- AdaIN-VC
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/adain/p334_007_to_p360_018.wav">
+                                    </audio> -->
+                                </td>
+                                <!-- <td>VQVC+
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/vqvc/p334_007_to_p360_018.wav">
+                                    </audio> AutoVC
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/autovc/p334_007_to_p360_018.wav">
+                                    </audio>
+                                </td> -->
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <!-- p334_007 -->
+                                    <audio controls preload="none">
+                                        <source
+                                            src="https://kimythanly.github.io/AGAIN-VC-demo/data/melgan/p334_007.wav">
+                                    </audio>
+                                </td>
+                                <td>
+                                    <!-- p362_010 -->
+                                    <audio controls preload="none">
+                                        <source
+                                            src="https://kimythanly.github.io/AGAIN-VC-demo/data/melgan/p362_010.wav">
+                                    </audio>
+                                </td>
+                                <td>
+                                    <!-- Proposed -->
+                                    <audio controls preload="none">
+                                        <source
+                                            src="https://kimythanly.github.io/AGAIN-VC-demo/data/proposed/p334_007_to_p362_010.wav">
+                                    </audio>
+                                    <!-- AdaIN-VC
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/adain/p334_007_to_p362_010.wav">
+                                    </audio> -->
+                                </td>
+                                <!-- <td>VQVC+
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/vqvc/p334_007_to_p362_010.wav">
+                                    </audio> AutoVC
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/autovc/p334_007_to_p362_010.wav">
+                                    </audio>
+                                </td> -->
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <!-- p343_004 -->
+                                    <audio controls preload="none">
+                                        <source
+                                            src="https://kimythanly.github.io/AGAIN-VC-demo/data/melgan/p343_004.wav">
+                                    </audio>
+                                </td>
+                                <td>
+                                    <!-- p334_007 -->
+                                    <audio controls preload="none">
+                                        <source
+                                            src="https://kimythanly.github.io/AGAIN-VC-demo/data/melgan/p334_007.wav">
+                                    </audio>
+                                </td>
+                                <td>
+                                    <!-- Proposed -->
+                                    <audio controls preload="none">
+                                        <source
+                                            src="https://kimythanly.github.io/AGAIN-VC-demo/data/proposed/p343_004_to_p334_007.wav">
+                                    </audio>
+                                    <!-- AdaIN-VC
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/adain/p343_004_to_p334_007.wav">
+                                    </audio> -->
+                                </td>
+                                <!-- <td>VQVC+
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/vqvc/p343_004_to_p334_007.wav">
+                                    </audio> AutoVC
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/autovc/p343_004_to_p334_007.wav">
+                                    </audio>
+                                </td> -->
+                            </tr>
+
+                            <!-- <tr>
+                                <td>p343_004
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/melgan/p343_004.wav">
+                                    </audio>
+                                </td>
+                                <td>p360_018
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/melgan/p360_018.wav">
+                                    </audio>
+                                </td>
+                                <td>Proposed
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/proposed/p343_004_to_p360_018.wav">
+                                    </audio> AdaIN-VC
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/adain/p343_004_to_p360_018.wav">
+                                    </audio>
+                                </td>
+                                <td>VQVC+
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/vqvc/p343_004_to_p360_018.wav">
+                                    </audio> AutoVC
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/autovc/p343_004_to_p360_018.wav">
+                                    </audio>
+                                </td>
+                            </tr> -->
+
+                            <!-- <tr>
+                                <td>p343_004
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/melgan/p343_004.wav">
+                                    </audio>
+                                </td>
+                                <td>p362_010
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/melgan/p362_010.wav">
+                                    </audio>
+                                </td>
+                                <td>Proposed
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/proposed/p343_004_to_p362_010.wav">
+                                    </audio> AdaIN-VC
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/adain/p343_004_to_p362_010.wav">
+                                    </audio>
+                                </td>
+                                <td>VQVC+
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/vqvc/p343_004_to_p362_010.wav">
+                                    </audio> AutoVC
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/autovc/p343_004_to_p362_010.wav">
+                                    </audio>
+                                </td>
+                            </tr> -->
+
+                            <!-- <tr>
+                                <td>p360_018
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/melgan/p360_018.wav">
+                                    </audio>
+                                </td>
+                                <td>p334_007
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/melgan/p334_007.wav">
+                                    </audio>
+                                </td>
+                                <td>Proposed
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/proposed/p360_018_to_p334_007.wav">
+                                    </audio> AdaIN-VC
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/adain/p360_018_to_p334_007.wav">
+                                    </audio>
+                                </td>
+                                <td>VQVC+
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/vqvc/p360_018_to_p334_007.wav">
+                                    </audio> AutoVC
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/autovc/p360_018_to_p334_007.wav">
+                                    </audio>
+                                </td>
+                            </tr> -->
+
+                            <!-- <tr>
+                                <td>p360_018
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/melgan/p360_018.wav">
+                                    </audio>
+                                </td>
+                                <td>p343_004
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/melgan/p343_004.wav">
+                                    </audio>
+                                </td>
+                                <td>Proposed
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/proposed/p360_018_to_p343_004.wav">
+                                    </audio> AdaIN-VC
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/adain/p360_018_to_p343_004.wav">
+                                    </audio>
+                                </td>
+                                <td>VQVC+
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/vqvc/p360_018_to_p343_004.wav">
+                                    </audio> AutoVC
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/autovc/p360_018_to_p343_004.wav">
+                                    </audio>
+                                </td>
+                            </tr> -->
+
+                            <!-- <tr>
+                                <td>p360_018
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/melgan/p360_018.wav">
+                                    </audio>
+                                </td>
+                                <td>p362_010
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/melgan/p362_010.wav">
+                                    </audio>
+                                </td>
+                                <td>Proposed
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/proposed/p360_018_to_p362_010.wav">
+                                    </audio> AdaIN-VC
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/adain/p360_018_to_p362_010.wav">
+                                    </audio>
+                                </td>
+                                <td>VQVC+
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/vqvc/p360_018_to_p362_010.wav">
+                                    </audio> AutoVC
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/autovc/p360_018_to_p362_010.wav">
+                                    </audio>
+                                </td>
+                            </tr> -->
+
+                            <!-- <tr>
+                                <td>p362_010
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/melgan/p362_010.wav">
+                                    </audio>
+                                </td>
+                                <td>p334_007
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/melgan/p334_007.wav">
+                                    </audio>
+                                </td>
+                                <td>Proposed
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/proposed/p362_010_to_p334_007.wav">
+                                    </audio> AdaIN-VC
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/adain/p362_010_to_p334_007.wav">
+                                    </audio>
+                                </td>
+                                <td>VQVC+
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/vqvc/p362_010_to_p334_007.wav">
+                                    </audio> AutoVC
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/autovc/p362_010_to_p334_007.wav">
+                                    </audio>
+                                </td>
+                            </tr> -->
+
+                            <!-- <tr>
+                                <td>p362_010
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/melgan/p362_010.wav">
+                                    </audio>
+                                </td>
+                                <td>p343_004
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/melgan/p343_004.wav">
+                                    </audio>
+                                </td>
+                                <td>Proposed
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/proposed/p362_010_to_p343_004.wav">
+                                    </audio> AdaIN-VC
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/adain/p362_010_to_p343_004.wav">
+                                    </audio>
+                                </td>
+                                <td>VQVC+
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/vqvc/p362_010_to_p343_004.wav">
+                                    </audio> AutoVC
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/autovc/p362_010_to_p343_004.wav">
+                                    </audio>
+                                </td>
+                            </tr> -->
+
+                            <!-- <tr>
+                                <td>p362_010
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/melgan/p362_010.wav">
+                                    </audio>
+                                </td>
+                                <td>p360_018
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/melgan/p360_018.wav">
+                                    </audio>
+                                </td>
+                                <td>Proposed
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/proposed/p362_010_to_p360_018.wav">
+                                    </audio> AdaIN-VC
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/adain/p362_010_to_p360_018.wav">
+                                    </audio>
+                                </td>
+                                <td>VQVC+
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/vqvc/p362_010_to_p360_018.wav">
+                                    </audio> AutoVC
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/autovc/p362_010_to_p360_018.wav">
+                                    </audio>
+                                </td>
+                            </tr> -->
+
+                        </tbody>
+                    </table>
+                </div>
+                <hr>
+                <!-- <div class="post-preview">
+                    <h2 class="post-title">
+                        For fun
+                    </h2>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Source</th>
+                                <th scope="col">Target</th>
+                                <th scope="col">Conversion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr>
+                                <td>phd_ch1
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/forfun/source/phd_ch1.wav">
+                                    </audio>
+                                </td>
+                                <td>p225_002
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/forfun/target/p225_002.wav">
+                                    </audio>
+                                </td>
+                                <td>Proposed
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/forfun/converted/phd_ch1_to_p225_002.wav">
+                                    </audio>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>phd_ch1
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/forfun/source/phd_ch1.wav">
+                                    </audio>
+                                </td>
+                                <td>p227_002
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/forfun/target/p227_002.wav">
+                                    </audio>
+                                </td>
+                                <td>Proposed
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/forfun/converted/phd_ch1_to_p227_002.wav">
+                                    </audio>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>phd_en3
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/forfun/source/phd_en3.wav">
+                                    </audio>
+                                </td>
+                                <td>p225_002
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/forfun/target/p225_002.wav">
+                                    </audio>
+                                </td>
+                                <td>Proposed
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/forfun/converted/phd_en3_to_p225_002.wav">
+                                    </audio>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>phd_en3
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/forfun/source/phd_en3.wav">
+                                    </audio>
+                                </td>
+                                <td>p227_002
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/forfun/target/p227_002.wav">
+                                    </audio>
+                                </td>
+                                <td>Proposed
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/forfun/converted/phd_en3_to_p227_002.wav">
+                                    </audio>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>welcome_ch3
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/forfun/source/welcome_ch3.wav">
+                                    </audio>
+                                </td>
+                                <td>p225_002
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/forfun/target/p225_002.wav">
+                                    </audio>
+                                </td>
+                                <td>Proposed
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/forfun/converted/welcome_ch3_to_p225_002.wav">
+                                    </audio>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>welcome_ch3
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/forfun/source/welcome_ch3.wav">
+                                    </audio>
+                                </td>
+                                <td>p227_002
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/forfun/target/p227_002.wav">
+                                    </audio>
+                                </td>
+                                <td>Proposed
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/forfun/converted/welcome_ch3_to_p227_002.wav">
+                                    </audio>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>welcome_en3
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/forfun/source/welcome_en3.wav">
+                                    </audio>
+                                </td>
+                                <td>p225_002
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/forfun/target/p225_002.wav">
+                                    </audio>
+                                </td>
+                                <td>Proposed
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/forfun/converted/welcome_en3_to_p225_002.wav">
+                                    </audio>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>welcome_en3
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/forfun/source/welcome_en3.wav">
+                                    </audio>
+                                </td>
+                                <td>p227_002
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/forfun/target/p227_002.wav">
+                                    </audio>
+                                </td>
+                                <td>Proposed
+                                    <audio controls preload="none">
+                                        <source src="https://kimythanly.github.io/AGAIN-VC-demo/data/forfun/converted/welcome_en3_to_p227_002.wav">
+                                    </audio>
+                                </td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div> -->
+                <hr>
+            </div>
+        </div>
+
+        <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+            integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+            crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx"
+            crossorigin="anonymous"></script>
+
+        <script src="js/clean-blog.js"></script>
+
+        <footer>
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-8 col-md-10 mx-auto" style="text-align: center; margin-top: -88px;">
+                        <p>Made by Leeasy with ❤️<br>VP Sentinel：安全声纹识别模型</p>
+                    </div>
+                </div>
+        </footer>
+</body>
+
+</html>
