@@ -2,6 +2,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchaudio
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from Carlini_Wagner import candw
+from ResCNN_TDNN import rescnntdnn
+from ResCNN_TDNN.deep_speaker.audio import Audio
 
 # 设置音频后端
 torchaudio.set_audio_backend("soundfile")
@@ -54,7 +60,7 @@ def pad_waveform(waveform, desired_length):
 
 
 discriminator = Discriminator()
-discriminator.load_state_dict(torch.load('../lib/discriminator.pth', map_location=torch.device('cpu')))
+discriminator.load_state_dict(torch.load('../discriminator.pth', map_location=torch.device('cpu')))
 discriminator.eval()  # 设置为评估模式
 
 sample_rate = 48000  # 你需要替换这个为你的实际采样率
@@ -64,9 +70,14 @@ desired_time_steps = 128
 # 预测测试集中的样本
 with torch.no_grad():  # 不需要计算梯度
 
-    audio_files = ['../lib/wav48/p225/p225_002.wav',
-                   '../lib/wav48/p225/p255_002.wav',
-                   '../lib/wav48/p225/p255_002.wav']
+    # 创建一个指向数据库的引擎
+    engine = create_engine('mysql+pymysql://admin:admin@localhost:3306/audio_database')
+    Session = sessionmaker(bind=engine)
+
+    # 创建一个新的Session实例
+    session = Session()
+
+    audio_files = session.query(Audio.files).all()
 
     for audio_file in audio_files:
 
@@ -98,3 +109,13 @@ with torch.no_grad():  # 不需要计算梯度
             outputs = torch.round(outputs)  # round to 0 or 1
             print('Predicted for file {}: '.format(audio_file),
                   ' '.join('%5s' % outputs[j] for j in range(len(outputs))))
+
+            # 根据预测结果调用CarliniWagner或ResCNNTDNN
+            if outputs.item() == 1:  # 对抗样本
+                carlini_wagner = candw.cw_main()
+                recovery = carlini_wagner.recover(inputs)
+                # 这里根据你的需求处理恢复后的样本
+            else:  # 非对抗样本
+                res_cnn_tdnn = rescnntdnn()
+                voiceprint = rescnntdnn.recognize(inputs)
+                # 这里根据你的需求处理声纹识别结果

@@ -4,7 +4,7 @@ import torch.nn as nn
 
 class Opt:
     def __init__(self):
-        self.img_size = 32
+        self.img_size = 64
         self.channels = 1
         self.latent_dim = 100
 
@@ -13,11 +13,18 @@ opt = Opt()
 
 
 class Generator(nn.Module):
-    def __init__(self):
+    def __init__(self, init_size=None):
         super(Generator, self).__init__()
 
-        self.init_size = opt.img_size // 4  # Initial size before upsampling
-        self.l1 = nn.Sequential(nn.Linear(opt.latent_dim, 128 * self.init_size ** 2))
+        if init_size:
+            self.init_size = init_size
+        else:
+            self.init_size = opt.img_size // 4
+
+        # self.l1 = nn.Sequential(
+        #     nn.Linear(opt.latent_dim, 128 * self.init_size ** 2))
+
+        self.l1 = nn.Linear(100, 8192)
 
         self.conv_blocks = nn.Sequential(
             nn.BatchNorm2d(128),
@@ -34,8 +41,13 @@ class Generator(nn.Module):
         )
 
     def forward(self, z):
+
         out = self.l1(z)
-        out = out.view(out.shape[0], 128, self.init_size, self.init_size)
+
+        reshape_size = int(out.shape[1] ** 0.5)
+
+        out = out.view(out.shape[0], 128, reshape_size, reshape_size)
+
         img = self.conv_blocks(out)
         return img
 

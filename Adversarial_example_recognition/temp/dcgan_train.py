@@ -14,8 +14,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch
 
-os.makedirs("images", exist_ok=True)
+from DCGAN_TRAIN.dcgan import Discriminator, Generator
 
+# 使用argparse模块设置训练参数
 parser = argparse.ArgumentParser()
 parser.add_argument("--n_epochs", type=int, default=200, help="number of epochs of training")
 parser.add_argument("--batch_size", type=int, default=64, help="size of the batches")
@@ -26,13 +27,14 @@ parser.add_argument("--n_cpu", type=int, default=8, help="number of cpu threads 
 parser.add_argument("--latent_dim", type=int, default=100, help="dimensionality of the latent space")
 parser.add_argument("--img_size", type=int, default=32, help="size of each image dimension")
 parser.add_argument("--channels", type=int, default=1, help="number of image channels")
-parser.add_argument("--sample_interval", type=int, default=400, help="interval between image sampling")
+parser.add_argument("--sample_interval", type=int, default=400, help="interval betwen image sampling")
 opt = parser.parse_args()
 print(opt)
 
+# 检查CUDA是否可用，如果可用，则在后续的训练中使用GPU
 cuda = True if torch.cuda.is_available() else False
 
-
+# 定义一个函数，用于初始化神经网络的权重
 def weights_init_normal(m):
     classname = m.__class__.__name__
     if classname.find("Conv") != -1:
@@ -41,7 +43,7 @@ def weights_init_normal(m):
         torch.nn.init.normal_(m.weight.data, 1.0, 0.02)
         torch.nn.init.constant_(m.bias.data, 0.0)
 
-
+# 定义生成器网络
 class Generator(nn.Module):
     def __init__(self):
         super(Generator, self).__init__()
@@ -69,7 +71,7 @@ class Generator(nn.Module):
         img = self.conv_blocks(out)
         return img
 
-
+# 定义鉴别器网络
 class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
@@ -87,9 +89,8 @@ class Discriminator(nn.Module):
             *discriminator_block(64, 128),
         )
 
-        # The height and width of downsampled image
         ds_size = opt.img_size // 2 ** 4
-        self.adv_layer = nn.Sequential(nn.Linear(128 * ds_size ** 2, 1), nn.Sigmoid())
+        # self.adv_layer = nn.Sequential(nn.Linear128 * ds_size ** 2, 1), nn.Sigmoid())
 
     def forward(self, img):
         out = self.model(img)
@@ -98,28 +99,28 @@ class Discriminator(nn.Module):
 
         return validity
 
-
-# Loss function
+# 定义损失函数
 adversarial_loss = torch.nn.BCELoss()
 
-# Initialize generator and discriminator
+# 初始化生成器和鉴别器
 generator = Generator()
 discriminator = Discriminator()
 
+# 如果CUDA可用，则使用CUDA
 if cuda:
     generator.cuda()
     discriminator.cuda()
     adversarial_loss.cuda()
 
-# Initialize weights
+# 应用权重初始化函数
 generator.apply(weights_init_normal)
 discriminator.apply(weights_init_normal)
 
-# Configure data loader
-os.makedirs("../../data/mnist", exist_ok=True)
+# 配置数据加载器
+os.makedirs("../../data/mel", exist_ok=True)
 dataloader = torch.utils.data.DataLoader(
     datasets.MNIST(
-        "../../data/mnist",
+        "../../data/mel",
         train=True,
         download=True,
         transform=transforms.Compose(
@@ -130,51 +131,43 @@ dataloader = torch.utils.data.DataLoader(
     shuffle=True,
 )
 
-# Optimizers
+# 定义优化器
 optimizer_G = torch.optim.Adam(generator.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
 optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
 
+# 定义Tensor类型
 Tensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
 
-# ----------
-#  Training
-# ----------
-
+# 训练
 for epoch in range(opt.n_epochs):
     for i, (imgs, _) in enumerate(dataloader):
 
-        # Adversarial ground truths
+        # 定义真实和伪造的标签
         valid = Variable(Tensor(imgs.shape[0], 1).fill_(1.0), requires_grad=False)
         fake = Variable(Tensor(imgs.shape[0], 1).fill_(0.0), requires_grad=False)
 
-        # Configure input
+        # 配置输入
         real_imgs = Variable(imgs.type(Tensor))
 
-        # -----------------
-        #  Train Generator
-        # -----------------
-
+        # 训练生成器
         optimizer_G.zero_grad()
 
-        # Sample noise as generator input
+        # 生成输入噪声
         z = Variable(Tensor(np.random.normal(0, 1, (imgs.shape[0], opt.latent_dim))))
 
-        # Generate a batch of images
+        # 生成图像批次
         gen_imgs = generator(z)
 
-        # Loss measures generator's ability to fool the discriminator
+        # 生成器的损失是其能够欺骗鉴别器的能力
         g_loss = adversarial_loss(discriminator(gen_imgs), valid)
 
         g_loss.backward()
         optimizer_G.step()
 
-        # ---------------------
-        #  Train Discriminator
-        # ---------------------
-
+        # 训练鉴别器
         optimizer_D.zero_grad()
 
-        # Measure discriminator's ability to classify real from generated samples
+        # 鉴别器的损失是对真实和生成样本进行分类的能力
         real_loss = adversarial_loss(discriminator(real_imgs), valid)
         fake_loss = adversarial_loss(discriminator(gen_imgs.detach()), fake)
         d_loss = (real_loss + fake_loss) / 2
@@ -182,6 +175,7 @@ for epoch in range(opt.n_epochs):
         d_loss.backward()
         optimizer_D.step()
 
+        # 打印损失
         print(
             "[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f]"
             % (epoch, opt.n_epochs, i, len(dataloader), d_loss.item(), g_loss.item())
@@ -191,6 +185,6 @@ for epoch in range(opt.n_epochs):
         if batches_done % opt.sample_interval == 0:
             save_image(gen_imgs.data[:25], "images/%d.png" % batches_done, nrow=5, normalize=True)
 
-# Save the model weights
+# 保存模型权重
 torch.save(generator.state_dict(), 'generator.pth')
 torch.save(discriminator.state_dict(), 'discriminator.pth')

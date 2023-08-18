@@ -28,7 +28,7 @@ def predict_speaker_similarity(filename_1, filename_2, base_model, tdnn_model):
 
 # Define the base model.
 base_model = DeepSpeakerModel()
-base_model.m.load_weights("ResCNN_triplet_training_checkpoint_265.h5", by_name=True)
+base_model.m.load_weights("./ResCNN_triplet_training_checkpoint_265.h5", by_name=True)
 
 # Define the TDNN model.
 tdnn_input_shape = (512,)  # The input shape for the TDNN model should be based on the output of the base model.
